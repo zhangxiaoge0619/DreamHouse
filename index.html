@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>焦雨晴之家 · 一庭一屋</title>
+<style>
+  :root{
+    --ink:#4a4238;
+    --paper:#f6efe4;
+    --paper-deep:#efe5d3;
+    --wood:#a8825a;
+    --wood-deep:#8a6a45;
+    --accent:#7a8471;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;}
+  body{
+    font-family:"Songti SC","STSong","Noto Serif SC","SimSun",serif;
+    background:var(--paper);
+    color:var(--ink);
+  }
+
+  /* ============ 通用视图切换 ============ */
+  .view{
+    position:fixed;inset:0;
+    opacity:0;pointer-events:none;
+    transition:opacity .7s ease;
+  }
+  .view.active{opacity:1;pointer-events:auto;}
+
+  /* ============ 标题角标 ============ */
+  .brand{
+    position:absolute;top:26px;left:30px;z-index:20;
+    writing-mode:vertical-rl;
+    font-size:15px;letter-spacing:.35em;
+    color:var(--ink);opacity:.75;
+    border-left:1px solid rgba(74,66,56,.3);
+    padding-left:10px;
+    user-select:none;
+  }
+
+  /* ============ 返回按钮 ============ */
+  .back-btn{
+    position:absolute;top:26px;right:30px;z-index:30;
+    display:flex;align-items:center;gap:8px;
+    background:rgba(246,239,228,.85);backdrop-filter:blur(6px);
+    border:1px solid rgba(138,106,69,.35);
+    color:var(--wood-deep);
+    font-family:inherit;font-size:14px;letter-spacing:.15em;
+    padding:9px 18px;border-radius:999px;cursor:pointer;
+    transition:all .3s ease;
+    box-shadow:0 2px 12px rgba(74,66,56,.12);
+  }
+  .back-btn:hover{background:var(--wood-deep);color:var(--paper);transform:translateY(-2px);}
+
+  /* ============ 视图零：主页（封面） ============ */
+  #view-home{background:#f3ecdd;overflow:hidden;}
+  .home-bg{
+    position:absolute;inset:-30px;
+    background:url("assets/courtyard.jpg") center/cover no-repeat;
+    filter:blur(7px) brightness(1.02);
+    transform:scale(1.05);
+  }
+  .home-veil{
+    position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% 42%, rgba(246,239,228,.28) 0%, rgba(243,236,221,.78) 62%, rgba(239,229,211,.95) 100%);
+  }
+  .home-inner{
+    position:absolute;inset:0;z-index:2;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    user-select:none;
+  }
+  .home-seal{
+    width:52px;height:52px;border-radius:10px;
+    background:rgba(178,74,56,.88);color:#fdf6ea;
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;transform:rotate(-4deg);
+    box-shadow:0 4px 16px rgba(74,42,32,.3);
+    margin-bottom:34px;
+  }
+  .home-title{
+    font-size:min(64px, 11vw);font-weight:600;
+    letter-spacing:.42em;text-indent:.42em;
+    color:var(--ink);
+    text-shadow:0 2px 20px rgba(246,239,228,.9);
+  }
+  .home-divider{
+    width:74px;height:1px;background:rgba(138,106,69,.55);
+    margin:30px 0 22px;
+  }
+  .home-sub{
+    font-size:15px;letter-spacing:.45em;text-indent:.45em;
+    color:rgba(74,66,56,.7);
+  }
+  .home-enter{
+    margin-top:56px;
+    font-family:inherit;font-size:16px;letter-spacing:.4em;text-indent:.4em;
+    color:var(--wood-deep);
+    background:rgba(246,239,228,.85);
+    border:1px solid rgba(138,106,69,.5);
+    padding:15px 42px;border-radius:999px;cursor:pointer;
+    box-shadow:0 6px 24px rgba(74,66,56,.18);
+    transition:all .35s ease;
+    animation:enterBreathe 3s ease-in-out infinite;
+  }
+  .home-enter:hover{
+    background:var(--wood-deep);color:var(--paper);
+    transform:translateY(-3px);
+    box-shadow:0 12px 32px rgba(74,66,56,.3);
+  }
+  @keyframes enterBreathe{
+    0%,100%{box-shadow:0 6px 24px rgba(74,66,56,.18);}
+    50%{box-shadow:0 6px 34px rgba(168,130,90,.45);}
+  }
+
+  /* ============ 视图一：庭院 ============ */
+  #view-courtyard{background:#f3ecdd;}
+  .courtyard-stage{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .courtyard-wrap{position:relative;width:min(100vw,177.78vh);height:min(100vh,56.25vw);}
+  .courtyard-wrap img{width:100%;height:100%;object-fit:fill;display:block;}
+  /* 庭院热区：脉冲圆点 + 名称标签 + 悬停柔光 */
+  .spot{
+    position:absolute;transform:translate(-50%,-50%);
+    cursor:pointer;z-index:5;
+    display:flex;flex-direction:column;align-items:center;
+    padding:14px;
+  }
+  .spot-glow{
+    position:absolute;left:50%;top:50%;
+    transform:translate(-50%,-50%) scale(.35);
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(255,244,214,.8) 0%, rgba(255,240,200,.35) 45%, rgba(255,240,200,0) 70%);
+    filter:blur(4px);
+    opacity:0;
+    transition:opacity .45s ease, transform .45s ease;
+    pointer-events:none;
+  }
+  .spot:hover .spot-glow{opacity:1;transform:translate(-50%,-50%) scale(1);}
+  .spot-dot{
+    width:15px;height:15px;border-radius:50%;
+    background:rgba(255,250,238,.95);
+    border:2px solid var(--wood);
+    animation:spotPulse 2.4s ease-out infinite;
+  }
+  @keyframes spotPulse{
+    0%{box-shadow:0 0 0 0 rgba(255,244,214,.8);}
+    70%{box-shadow:0 0 0 15px rgba(255,244,214,0);}
+    100%{box-shadow:0 0 0 0 rgba(255,244,214,0);}
+  }
+  .spot-label{
+    margin-top:12px;white-space:nowrap;
+    background:rgba(246,239,228,.92);
+    border:1px solid rgba(138,106,69,.4);
+    color:var(--wood-deep);
+    font-size:13px;letter-spacing:.2em;text-indent:.2em;
+    padding:5px 12px;border-radius:999px;
+    box-shadow:0 3px 10px rgba(74,66,56,.15);
+    transition:all .3s ease;user-select:none;
+  }
+  .spot:hover .spot-label{
+    background:var(--wood-deep);color:var(--paper);
+    transform:scale(1.08);
+  }
+
+  /* ======== 庭院装饰：画框 / 角花 / 纹样带 / 花瓣 ======== */
+  .cy-frame{
+    position:absolute;inset:16px;z-index:6;pointer-events:none;
+    border:1px solid rgba(138,106,69,.45);
+  }
+  .cy-frame::before{
+    content:"";position:absolute;inset:6px;
+    border:1px solid rgba(138,106,69,.22);
+  }
+  .cy-corner{
+    position:absolute;width:32px;height:32px;z-index:7;pointer-events:none;
+    border:0 solid var(--wood-deep);opacity:.75;
+  }
+  .cy-corner.tl{top:12px;left:12px;border-top-width:3px;border-left-width:3px;border-top-left-radius:6px;}
+  .cy-corner.tr{top:12px;right:12px;border-top-width:3px;border-right-width:3px;border-top-right-radius:6px;}
+  .cy-corner.bl{bottom:12px;left:12px;border-bottom-width:3px;border-left-width:3px;border-bottom-left-radius:6px;}
+  .cy-corner.br{bottom:12px;right:12px;border-bottom-width:3px;border-right-width:3px;border-bottom-right-radius:6px;}
+  /* 青海波纹样带（上/下边缘） */
+  .cy-strip{
+    position:absolute;left:0;right:0;height:22px;z-index:6;pointer-events:none;
+    background-image:
+      radial-gradient(circle at 50% 0, transparent 9px, rgba(138,106,69,.5) 10px, transparent 11.5px),
+      radial-gradient(circle at 50% 0, transparent 9px, rgba(138,106,69,.28) 10px, transparent 11.5px);
+    background-size:24px 12px;
+    background-position:0 0, 12px 5px;
+    background-repeat:repeat-x;
+  }
+  .cy-strip.top{top:22px;}
+  .cy-strip.bottom{bottom:22px;transform:scaleY(-1);}
+  /* 飘落的花瓣 */
+  .petal{
+    position:absolute;top:-5%;z-index:8;pointer-events:none;
+    border-radius:62% 38% 60% 40%;
+    animation-name:petalFall, petalSway;
+    animation-timing-function:linear, ease-in-out;
+    animation-iteration-count:infinite, infinite;
+  }
+  @keyframes petalFall{
+    to{top:105%;}
+  }
+  @keyframes petalSway{
+    0%{transform:translateX(0) rotate(0deg);}
+    25%{transform:translateX(22px) rotate(95deg);}
+    50%{transform:translateX(-12px) rotate(175deg);}
+    75%{transform:translateX(18px) rotate(265deg);}
+    100%{transform:translateX(0) rotate(360deg);}
+  }
+  @media (max-width:720px){
+    .cy-frame{inset:10px;}
+    .cy-corner{width:22px;height:22px;}
+    .cy-corner.tl{top:7px;left:7px;}
+    .cy-corner.tr{top:7px;right:7px;}
+    .cy-corner.bl{bottom:7px;left:7px;}
+    .cy-corner.br{bottom:7px;right:7px;}
+    .cy-strip{height:16px;background-size:18px 9px;}
+  }
+  /* 旧矩形热区样式已移除，改由 SVG 多边形描绘 */
+  .courtyard-caption{
+    position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
+    font-size:14px;letter-spacing:.3em;color:rgba(74,66,56,.6);
+    user-select:none;
+  }
+  /* 庭院页专属：角标下移放大、返回按钮避开画框 */
+  #view-courtyard .brand{
+    top:96px;left:40px;
+    font-size:23px;letter-spacing:.32em;
+    opacity:.92;
+    padding-left:14px;
+    border-left:2px solid rgba(138,106,69,.55);
+  }
+  #view-courtyard .back-btn,
+  #view-floorplan .back-btn,
+  #view-room .back-btn{
+    top:48px;right:48px;
+  }
+  /* 竖排题句 */
+  .v-intro{
+    position:absolute;z-index:8;pointer-events:none;user-select:none;
+    writing-mode:vertical-rl;
+    font-size:16px;letter-spacing:.5em;
+    color:rgba(74,66,56,.62);
+  }
+  .v-intro span{display:block;margin-left:16px;}
+  #view-courtyard .v-intro{right:56px;top:50%;transform:translateY(-50%);}
+  #view-floorplan .v-intro{right:46px;top:50%;transform:translateY(-50%);}
+  @media (max-width:720px){
+    .v-intro{display:none;}
+  }
+
+  /* ============ 视图二：平面图 ============ */
+  #view-floorplan{
+    background:
+      radial-gradient(ellipse at 30% 20%, #faf4e8 0%, var(--paper) 55%, var(--paper-deep) 100%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:70px 20px 24px;
+  }
+  .floorplan-title{
+    font-size:22px;letter-spacing:.5em;text-indent:.5em;
+    color:var(--ink);margin-bottom:6px;user-select:none;
+  }
+  .floorplan-sub{
+    font-size:13px;letter-spacing:.2em;color:rgba(74,66,56,.55);
+    margin-bottom:18px;user-select:none;
+  }
+  .floorplan-frame{
+    position:relative;
+    height:min(74vh, 100%);
+    aspect-ratio:2048/1888;
+    max-width:94vw;
+    border-radius:10px;
+    box-shadow:0 18px 50px rgba(74,66,56,.22), 0 0 0 1px rgba(138,106,69,.25);
+    overflow:hidden;
+    background:#fdf8ee;
+  }
+  .floorplan-frame>img{
+    width:100%;height:100%;object-fit:cover;display:block;
+  }
+  /* 房间热区 */
+  .room-hotspot{
+    position:absolute;cursor:pointer;
+    border-radius:14px;
+    transition:background .35s ease, box-shadow .35s ease;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .room-hotspot:hover{
+    background:rgba(255,246,226,.35);
+    box-shadow:inset 0 0 0 2px rgba(168,130,90,.75), inset 0 0 50px rgba(255,240,200,.4);
+  }
+  .room-label{
+    background:rgba(246,239,228,.94);
+    border:1px solid rgba(138,106,69,.5);
+    color:var(--wood-deep);
+    font-size:15px;letter-spacing:.3em;text-indent:.3em;
+    padding:8px 18px;border-radius:8px;
+    box-shadow:0 4px 14px rgba(74,66,56,.18);
+    transition:all .3s ease;
+    user-select:none;
+  }
+  .room-hotspot:hover .room-label{
+    background:var(--wood-deep);color:var(--paper);
+    transform:scale(1.08);
+  }
+
+  /* ============ 视图三：房间全景 ============ */
+  #view-room{background:#141210;overflow:hidden;}
+  .pano{
+    position:absolute;inset:0;overflow:hidden;cursor:grab;
+  }
+  .pano.dragging{cursor:grabbing;}
+  .pano img{
+    position:absolute;top:50%;left:0;
+    transform:translateY(-50%);
+    height:116%;
+    max-width:none;
+    user-select:none;pointer-events:none;
+    will-change:transform;
+  }
+  .pano-veil{
+    position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(to bottom, rgba(20,18,16,.35), transparent 22%, transparent 70%, rgba(20,18,16,.45));
+  }
+  .pano-tip{
+    position:absolute;bottom:26px;left:50%;transform:translateX(-50%);
+    color:rgba(246,239,228,.75);font-size:13px;letter-spacing:.25em;
+    user-select:none;pointer-events:none;
+    transition:opacity 1s ease;
+  }
+  .room-heading{
+    position:absolute;top:88px;left:44px;z-index:15;
+    color:#f6efe4;user-select:none;pointer-events:none;
+  }
+  .room-heading h2{
+    font-size:34px;font-weight:600;letter-spacing:.3em;
+    text-shadow:0 2px 14px rgba(0,0,0,.45);
+  }
+  .room-heading .jp{
+    margin-top:8px;font-size:13px;letter-spacing:.45em;color:rgba(246,239,228,.65);
+  }
+  /* 设计构想卡片 */
+  .design-card{
+    position:absolute;z-index:16;
+    right:44px;top:50%;
+    transform:translateY(-50%) translateX(40px);
+    width:min(360px, 86vw);
+    background:linear-gradient(160deg, #f9f3e6 0%, #f1e6d0 100%);
+    border:1px solid rgba(168,130,90,.45);
+    border-radius:14px;
+    padding:30px 28px 26px;
+    box-shadow:0 20px 60px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,252,244,.6);
+    opacity:0;
+    transition:opacity .7s ease, transform .7s cubic-bezier(.22,1,.36,1);
+  }
+  .design-card.show{opacity:1;transform:translateY(-50%) translateX(0);}
+  .design-card.collapsed{
+    opacity:0;pointer-events:none;
+    transform:translateY(-50%) translateX(calc(100% + 60px));
+    transition:opacity .5s ease, transform .5s cubic-bezier(.55,.06,.68,.19);
+  }
+  /* 卡片右上角收起按钮 */
+  .card-collapse{
+    position:absolute;top:14px;right:14px;z-index:2;
+    width:30px;height:30px;border-radius:50%;
+    border:1px solid rgba(138,106,69,.45);
+    background:rgba(246,239,228,.9);
+    color:var(--wood-deep);font-size:16px;line-height:1;
+    cursor:pointer;font-family:inherit;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .25s ease;
+  }
+  .card-collapse:hover{background:var(--wood-deep);color:var(--paper);transform:scale(1.1);}
+  /* 收起后的边缘小标签 */
+  .card-tab{
+    position:absolute;z-index:16;
+    right:0;top:50%;
+    transform:translateY(-50%) translateX(100%);
+    writing-mode:vertical-rl;
+    font-size:14px;letter-spacing:.35em;
+    color:#f6efe4;background:var(--wood);
+    border:1px solid rgba(138,106,69,.6);border-right:none;
+    border-radius:10px 0 0 10px;
+    padding:18px 10px;
+    cursor:pointer;font-family:inherit;
+    box-shadow:-4px 0 16px rgba(0,0,0,.35);
+    opacity:0;
+    transition:transform .45s cubic-bezier(.22,1,.36,1), opacity .45s ease, background .25s ease;
+  }
+  .card-tab.show{transform:translateY(-50%) translateX(0);opacity:1;}
+  .card-tab:hover{background:var(--wood-deep);}
+  .design-card::before{
+    content:"";position:absolute;top:12px;left:12px;right:12px;bottom:12px;
+    border:1px solid rgba(168,130,90,.3);border-radius:8px;pointer-events:none;
+  }
+  .design-card .card-tag{
+    display:inline-block;
+    font-size:12px;letter-spacing:.4em;text-indent:.4em;
+    color:#f6efe4;background:var(--wood);
+    padding:5px 14px;border-radius:4px;margin-bottom:16px;
+  }
+  .design-card h3{
+    font-size:20px;letter-spacing:.2em;color:var(--wood-deep);margin-bottom:14px;
+  }
+  .design-card p{
+    font-size:15px;line-height:2.05;color:#5a5044;
+    text-align:justify;letter-spacing:.06em;
+  }
+  .design-card .seal{
+    position:absolute;right:22px;bottom:18px;
+    width:34px;height:34px;border-radius:6px;
+    background:rgba(178,74,56,.85);color:#fdf6ea;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;letter-spacing:0;line-height:1;
+    transform:rotate(-4deg);
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+  }
+
+  @media (max-width:720px){
+    .room-heading{top:80px;left:22px;}
+    .room-heading h2{font-size:26px;}
+    .design-card{
+      right:50%;top:auto;bottom:20px;
+      transform:translateX(50%) translateY(30px);
+      padding:22px 20px 20px;
+    }
+    .design-card.show{transform:translateX(50%) translateY(0);}
+    .design-card.collapsed{
+      transform:translateX(50%) translateY(calc(100% + 40px));
+    }
+    .card-tab{
+      top:auto;bottom:110px;
+      transform:translateY(0) translateX(100%);
+    }
+    .card-tab.show{transform:translateY(0) translateX(0);}
+    .design-card p{font-size:14px;line-height:1.9;}
+    .brand{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= 视图零：主页（封面） ================= -->
+<section id="view-home" class="view active">
+  <div class="home-bg"></div>
+  <div class="home-veil"></div>
+  <div class="home-inner">
+    <div class="home-seal">晴</div>
+    <h1 class="home-title">焦雨晴之家</h1>
+    <div class="home-divider"></div>
+    <div class="home-sub">一 庭 一 屋 · 四 季 有 余</div>
+    <button class="home-enter" id="enterBtn">入 庭</button>
+  </div>
+</section>
+
+<!-- ================= 视图一：庭院 ================= -->
+<section id="view-courtyard" class="view">
+  <div class="brand">焦雨晴之家</div>
+  <button class="back-btn" data-back="view-home">‹ 返回主页</button>
+  <div class="cy-frame"></div>
+  <span class="cy-corner tl"></span><span class="cy-corner tr"></span>
+  <span class="cy-corner bl"></span><span class="cy-corner br"></span>
+  <div class="cy-strip top"></div>
+  <div class="cy-strip bottom"></div>
+  <div class="v-intro"><span>苔痕上阶绿</span><span>锦鲤戏清池</span></div>
+  <div class="courtyard-stage">
+    <div class="courtyard-wrap">
+      <img src="assets/courtyard.jpg" alt="日式庭院">
+      <!-- 热区由 JS 按配置生成（脉冲圆点 + 标签） -->
+    </div>
+  </div>
+  <div class="courtyard-caption">点 击 圆 点 · 探 索 庭 院</div>
+</section>
+
+<!-- ================= 视图二：房屋平面图 ================= -->
+<section id="view-floorplan" class="view">
+  <div class="brand">焦雨晴之家 · 间取り</div>
+  <button class="back-btn" data-back="view-courtyard">‹ 返回庭院</button>
+  <div class="floorplan-title">房 屋 平 面 图</div>
+  <div class="floorplan-sub">点 击 房 间 · 入 内 探 索</div>
+  <div class="v-intro"><span>五室藏四季</span><span>一屋纳烟火</span></div>
+  <div class="floorplan-frame">
+    <img src="assets/floorplan.jpg" alt="房屋平面图" id="floorplanImg">
+    <!-- 热区由 JS 按配置生成 -->
+  </div>
+</section>
+
+<!-- ================= 视图三：房间/景物 详情 ================= -->
+<section id="view-room" class="view">
+  <button class="back-btn" id="roomBackBtn" data-back="view-floorplan">‹ 返回平面图</button>
+  <div class="room-heading">
+    <h2 id="roomName">客厅</h2>
+    <div class="jp" id="roomJp">リビング</div>
+  </div>
+  <div class="pano" id="pano">
+    <img id="panoImg" src="" alt="房间全景">
+    <div class="pano-veil"></div>
+  </div>
+  <div class="pano-tip" id="panoTip">← 拖 拽 环 顾 四 周 →</div>
+  <aside class="design-card" id="designCard">
+    <button class="card-collapse" id="cardCollapse" title="收起">›</button>
+    <span class="card-tag">设 计 构 想</span>
+    <h3 id="cardTitle"></h3>
+    <p id="cardText"></p>
+    <div class="seal">晴</div>
+  </aside>
+  <button class="card-tab" id="cardTab" title="展开设计构想">设 计 构 想</button>
+</section>
+
+<script>
+/* =========================================================
+ * 房间配置 —— 想改设计构想文字，直接改这里即可
+ * rect: [左%, 上%, 宽%, 高%] 为平面图上热区位置
+ * =======================================================*/
+const ROOMS = {
+  study: {
+    name: "书房", jp: "書斎",
+    img: "assets/study.jpg",
+    rect: [9.5, 10, 27.5, 39],
+    title: "一间可以沉下来的屋子",
+    text: "三面墙都做通顶书架，书按颜色和心境随手摆放，不必太整齐。临窗一张原木长桌，白天借自然光读书写字，夜里只点一盏台灯。榻榻米角落留一个可以蜷着的位置，听雨、翻书、打盹，都很好。"
+  },
+  living: {
+    name: "客厅", jp: "リビング",
+    img: "assets/livingroom.jpg",
+    rect: [38, 9.5, 53, 39.5],
+    title: "把庭院借进屋里来",
+    text: "整面落地障子门朝向庭院，开合之间，锦鲤池与青苔石组就成了客厅的背景画。矮桌配蒲团，席地而坐，喝茶看鱼。家具只用原木与白墙，克制一点，让光影和四季来做装饰。"
+  },
+  kitchen: {
+    name: "厨房", jp: "台所",
+    img: "assets/kitchen.jpg",
+    rect: [9.5, 50, 27.5, 40],
+    title: "烟火气也要清清爽爽",
+    text: "一字型操作台配上墙木搁板，碗碟陶罐全摆在明处，拿取顺手，看着也欢喜。窗边留给水槽，洗菜时抬头就是天光。吊柜到顶不积灰，藤编筐收零碎，日子虽然琐碎，厨房要整洁明亮。"
+  },
+  bedroom: {
+    name: "卧室", jp: "寝室",
+    img: "assets/bedroom.jpg",
+    rect: [38, 50, 33, 40],
+    title: "睡在一团温柔的光里",
+    text: "低矮的木架床，配素色棉麻床品，躺下时视线刚好越过窗沿看见树梢。东侧开大窗，让晨光叫人起床；床头只留一盏纸灯、一本没读完的书。整面墙做隐藏衣柜，眼不见杂物，心才静得下来。"
+  },
+  bathroom: {
+    name: "卫生间", jp: "風呂",
+    img: "assets/bathroom.jpg",
+    rect: [71.5, 50, 19.5, 40],
+    title: "一天的疲惫，泡掉就好",
+    text: "日式卫浴讲究先淋浴、后入浴，深泡浴缸靠墙而设，水面要与窗沿齐平，泡着澡也能看窗外光影。白瓷砖配原木浴室柜，干区放一盆绿植、一只小鸭，洁净里带一点俏皮。"
+  }
+};
+
+/* =========================================================
+ * 房屋入口 —— labelAt: 圆点与标签位置 [x%, y%]；glow: 悬停柔光直径(px)
+ * =======================================================*/
+const HOUSE = {
+  name: "房屋",
+  labelAt: [53.0, 33.0],
+  glow: 340
+};
+
+/* =========================================================
+ * 庭院景物配置 —— labelAt: 圆点与标签位置 [x%, y%]
+ * =======================================================*/
+const SPOTS = {
+  woodshed: {
+    name: "柴房", jp: "薪小屋",
+    img: "assets/柴房.jpg",
+    labelAt: [29.3, 38.5],
+    glow: 240,
+    title: "码得整整齐齐的冬日底气",
+    text: "靠着院墙搭一间半开放的柴房，人字坡屋顶探出檐口，雨水淋不到柴垛。原木按粗细分类码放，断面朝外，好看也方便取用。旁边留一把斧头和树桩，冬日傍晚劈柴生火，是庭院生活里最踏实的事。"
+  },
+  toolshed: {
+    name: "工具柜", jp: "道具櫃",
+    img: "assets/工具柜.jpg",
+    labelAt: [76.2, 47.0],
+    glow: 190,
+    title: "每件工具都有自己的位置",
+    text: "院角立一座双开门工具柜，洞洞板上挂锤子扳手，搁板摆收纳盒，底下大抽屉放沉重家什。柜顶做人字坡小瓦檐，和正屋呼应。园艺剪、浇水壶随手可取，收拾院子的兴致，从打开这扇柜门开始。"
+  },
+  pond: {
+    name: "水池", jp: "池",
+    img: "assets/水池.jpg",
+    labelAt: [33.8, 68.0],
+    glow: 250,
+    title: "一泓清水，几尾锦鲤",
+    text: "庭院西南角挖一方不规则的水池，池壁用大块鹅卵石垒砌，缝隙里种苔藓和菖蒲。水不用太深，养几尾锦鲤刚好。清晨看鱼影划过水面，雨天听水滴敲出涟漪——水池是整个庭院的眼睛。"
+  },
+  well: {
+    name: "水井", jp: "井戸",
+    img: "assets/水井.jpg",
+    labelAt: [72.3, 58.0],
+    glow: 170,
+    title: "摇起一桶清凉的夏天",
+    text: "石砌井栏配原木辘轳，麻绳一圈圈缠出岁月的痕迹。井水不一定日日饮用，但夏日冰一只西瓜、浇一方青苔，都靠它。井边铺几块踏脚石，放一只木桶，摇把转动的吱呀声，是老院子才有的声音。"
+  }
+};
+
+/* ================= 视图切换 ================= */
+const views = {
+  "view-home":      document.getElementById("view-home"),
+  "view-courtyard": document.getElementById("view-courtyard"),
+  "view-floorplan": document.getElementById("view-floorplan"),
+  "view-room":      document.getElementById("view-room"),
+};
+let currentView = "view-home";
+
+function showView(id){
+  views[currentView].classList.remove("active");
+  views[id].classList.add("active");
+  currentView = id;
+}
+
+/* 主页：入庭 → 庭院 */
+document.getElementById("enterBtn").addEventListener("click", () => {
+  showView("view-courtyard");
+});
+
+/* ================= 庭院热区：脉冲圆点 + 标签 ================= */
+/* 飘落花瓣（樱粉 / 叶青 / 米白三色随机） */
+(function scatterPetals(){
+  const view = document.getElementById("view-courtyard");
+  const colors = [
+    "radial-gradient(ellipse at 30% 30%, #f7dcd2, #e6ad9e)",
+    "radial-gradient(ellipse at 30% 30%, #dde4cf, #a9b78f)",
+    "radial-gradient(ellipse at 30% 30%, #fbf3e2, #e3cfa5)"
+  ];
+  for(let i = 0; i < 12; i++){
+    const p = document.createElement("span");
+    p.className = "petal";
+    const size = 7 + Math.random() * 9;
+    const fall = 9 + Math.random() * 8;          // 下落 9~17s
+    const sway = 3 + Math.random() * 2.5;        // 摇摆 3~5.5s
+    p.style.left = Math.random() * 100 + "%";
+    p.style.width = size + "px";
+    p.style.height = size * 0.82 + "px";
+    p.style.background = colors[i % 3];
+    p.style.opacity = (0.5 + Math.random() * 0.4).toFixed(2);
+    p.style.animationDuration = fall + "s, " + sway + "s";
+    p.style.animationDelay = (-Math.random() * fall) + "s, " + (-Math.random() * sway) + "s";
+    view.appendChild(p);
+  }
+})();
+
+(function buildCourtyardSpots(){
+  const wrap = document.querySelector(".courtyard-wrap");
+  const items = [
+    { cfg: HOUSE, onClick: () => showView("view-floorplan") },
+    ...Object.values(SPOTS).map(s => ({
+      cfg: s, onClick: () => enterDetail(s, "view-courtyard", "‹ 返回庭院")
+    }))
+  ];
+
+  items.forEach(({ cfg, onClick }, i) => {
+    const el = document.createElement("div");
+    el.className = "spot";
+    el.style.left = cfg.labelAt[0] + "%";
+    el.style.top  = cfg.labelAt[1] + "%";
+    el.title = cfg.name;
+    const glow = cfg.glow || 190;
+    el.innerHTML =
+      `<span class="spot-glow" style="width:${glow}px;height:${glow}px"></span>` +
+      `<span class="spot-dot" style="animation-delay:${i * 0.45}s"></span>` +
+      `<span class="spot-label">${cfg.name}</span>`;
+    el.addEventListener("click", onClick);
+    wrap.appendChild(el);
+  });
+})();
+
+/* 返回按钮 */
+document.querySelectorAll(".back-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    stopPano();
+    showView(btn.dataset.back);
+  });
+});
+
+/* Esc 逐级返回 */
+document.addEventListener("keydown", e => {
+  if(e.key !== "Escape") return;
+  if(currentView === "view-room"){ stopPano(); showView(roomBackTarget); }
+  else if(currentView === "view-floorplan"){ showView("view-courtyard"); }
+  else if(currentView === "view-courtyard"){ showView("view-home"); }
+});
+
+/* ================= 平面图热区 ================= */
+const frame = document.querySelector(".floorplan-frame");
+Object.entries(ROOMS).forEach(([key, room]) => {
+  const [l, t, w, h] = room.rect;
+  const spot = document.createElement("div");
+  spot.className = "room-hotspot";
+  spot.style.left = l + "%";
+  spot.style.top = t + "%";
+  spot.style.width = w + "%";
+  spot.style.height = h + "%";
+  spot.innerHTML = `<span class="room-label">${room.name}</span>`;
+  spot.addEventListener("click", () => enterRoom(key));
+  frame.appendChild(spot);
+});
+
+/* ================= 房间全景（可拖拽环视） ================= */
+const pano     = document.getElementById("pano");
+const panoImg  = document.getElementById("panoImg");
+const panoTip  = document.getElementById("panoTip");
+const card     = document.getElementById("designCard");
+const cardTab  = document.getElementById("cardTab");
+
+/* 卡片 收起 / 展开 */
+document.getElementById("cardCollapse").addEventListener("click", () => {
+  card.classList.remove("show");
+  card.classList.add("collapsed");
+  cardTab.classList.add("show");
+});
+cardTab.addEventListener("click", () => {
+  card.classList.remove("collapsed");
+  card.classList.add("show");
+  cardTab.classList.remove("show");
+});
+
+let panX = 0, panMin = 0, dragging = false, dragStartX = 0, panStartX = 0;
+let idleTimer = null, driftRAF = null, panoActive = false;
+let roomBackTarget = "view-floorplan";
+
+function enterRoom(key){
+  enterDetail(ROOMS[key], "view-floorplan", "‹ 返回平面图");
+}
+
+function enterDetail(item, backTarget, backLabel){
+  roomBackTarget = backTarget;
+  const backBtn = document.getElementById("roomBackBtn");
+  backBtn.dataset.back = backTarget;
+  backBtn.textContent = backLabel;
+
+  document.getElementById("roomName").textContent = item.name;
+  document.getElementById("roomJp").textContent = item.jp;
+  document.getElementById("cardTitle").textContent = item.title;
+  document.getElementById("cardText").textContent = item.text;
+
+  card.classList.remove("show", "collapsed");
+  cardTab.classList.remove("show");
+  panoTip.style.opacity = "1";
+
+  panoImg.src = item.img;
+  panoImg.onload = () => {
+    setupPano();
+    showView("view-room");
+    panoActive = true;
+    startDrift();
+    setTimeout(() => card.classList.add("show"), 450);
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => panoTip.style.opacity = "0", 5000);
+  };
+}
+
+function setupPano(){
+  /* 高度取 max(视口116%, 铺满宽度所需高度)，保证任何比例图片都全屏铺满 */
+  const r = panoImg.naturalWidth / panoImg.naturalHeight;
+  const W = pano.clientWidth, H = pano.clientHeight;
+  const h = Math.max(H * 1.16, W / r);
+  panoImg.style.height = h + "px";
+  const overWidth = h * r - W;
+  panMin = -Math.max(overWidth, 0);
+  panX = panMin / 2;                 // 初始居中
+  applyPan();
+}
+
+function applyPan(){
+  panoImg.style.transform = `translateY(-50%) translateX(${panX}px)`;
+}
+
+function clampPan(){
+  panX = Math.min(0, Math.max(panMin, panX));
+}
+
+/* 缓慢自动漂移，营造“环顾”感 */
+let driftDir = 1;
+function startDrift(){
+  cancelAnimationFrame(driftRAF);
+  const step = () => {
+    if(!panoActive) return;
+    if(!dragging){
+      panX += 0.18 * driftDir;
+      if(panX >= 0){ panX = 0; driftDir = -1; }
+      if(panX <= panMin){ panX = panMin; driftDir = 1; }
+      applyPan();
+    }
+    driftRAF = requestAnimationFrame(step);
+  };
+  driftRAF = requestAnimationFrame(step);
+}
+function stopPano(){
+  panoActive = false;
+  cancelAnimationFrame(driftRAF);
+}
+
+/* 拖拽交互（鼠标 + 触摸） */
+function onDown(x){
+  dragging = true;
+  pano.classList.add("dragging");
+  dragStartX = x; panStartX = panX;
+}
+function onMove(x){
+  if(!dragging) return;
+  panX = panStartX + (x - dragStartX);
+  clampPan(); applyPan();
+}
+function onUp(){
+  dragging = false;
+  pano.classList.remove("dragging");
+}
+pano.addEventListener("mousedown", e => onDown(e.clientX));
+window.addEventListener("mousemove", e => onMove(e.clientX));
+window.addEventListener("mouseup", onUp);
+pano.addEventListener("touchstart", e => onDown(e.touches[0].clientX), {passive:true});
+pano.addEventListener("touchmove",  e => onMove(e.touches[0].clientX), {passive:true});
+pano.addEventListener("touchend", onUp);
+
+/* 窗口尺寸变化时重算平移范围 */
+window.addEventListener("resize", () => {
+  if(currentView === "view-room" && panoImg.complete){ setupPano(); }
+});
+</script>
+</body>
+</html>
